@@ -1,0 +1,132 @@
+<?php
+session_start();
+
+// Check if customer is logged in
+if (!isset($_SESSION['customer_email'])) {
+    header("Location: customer_login.php");
+    exit();
+}
+
+// Database connection details
+$servername = "localhost";
+$root_username = "root"; // Root user
+$root_password = "database"; // Root password
+$dbname = "QureshiTrips";
+
+// Connect to MySQL
+$conn = new mysqli($servername, $root_username, $root_password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Fetch services from the Service table
+$services_sql = "SELECT * FROM Service WHERE AvailabilityStatus = 'Available'";
+$services_result = $conn->query($services_sql);
+
+// Check if any services are available
+$services = [];
+if ($services_result->num_rows > 0) {
+    while ($row = $services_result->fetch_assoc()) {
+        $services[] = $row;
+    }
+} else {
+    $error_message = "No available services at the moment.";
+}
+
+$conn->close();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        h2 {
+            color: #444;
+        }
+        .service-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            background-color: #fff;
+        }
+        .service-item h3 {
+            color: #007bff;
+        }
+        .service-description {
+            color: #555;
+            font-size: 1rem;
+        }
+        .service-price {
+            font-size: 1.2rem;
+            color: #333;
+            margin-top: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 15px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        .error-message {
+            text-align: center;
+            color: red;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome, <?php echo $_SESSION['customer_email']; ?>!</h1>
+        <a href="customer_profile.php" class="btn">View Profile</a>
+        <a href="customer_logout.php" class="btn">Logout</a>
+
+        <h2>Available Services</h2>
+        <?php if (!empty($services)): ?>
+            <?php foreach ($services as $service): ?>
+                <div class="service-item">
+                    <h3><?php echo htmlspecialchars($service['ServiceType']); ?></h3>
+                    <p class="service-description"><?php echo htmlspecialchars($service['Description']); ?></p>
+                    <p class="service-price">Price: Rs. <?php echo htmlspecialchars($service['Price']); ?></p>
+                    
+                    <a href="http://localhost/QureshiTrips/customer/transaction_page.php?service_id=<?php echo $service['ServiceID']; ?>" class="btn">Book Now</a>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <p class="error-message"><?php echo $error_message; ?></p>
+        <?php endif; ?>
+    </div>
+</body>
+</html>
